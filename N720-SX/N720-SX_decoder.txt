@@ -1,0 +1,56 @@
+function decodeUplink(input) {
+  var port = input.fPort;
+  var bytes = input.bytes;
+  var data = {};
+
+  function getzf(c_num) {
+    if (parseInt(c_num) < 10)
+      c_num = '0' + c_num;
+    return c_num;
+  }
+
+  function getMyDate(str) {
+    var c_Date;
+    if (str > 9999999999)
+      c_Date = new Date(parseInt(str));
+    else
+      c_Date = new Date(parseInt(str) * 1000);
+
+    var c_Year = c_Date.getFullYear(),
+      c_Month = c_Date.getMonth() + 1,
+      c_Day = c_Date.getDate(),
+      c_Hour = c_Date.getHours(),
+      c_Min = c_Date.getMinutes(),
+      c_Sen = c_Date.getSeconds();
+    var c_Time = c_Year + '-' + getzf(c_Month) + '-' + getzf(c_Day) + ' ' + getzf(c_Hour) + ':' + getzf(c_Min) + ':' + getzf(c_Sen);
+    return c_Time;
+  }
+
+  switch (port) {
+    case 2:
+      data.BatV = ((bytes[0] << 8 | bytes[1]) & 0x3FFF) / 1000;
+      data.TempC = parseFloat(((bytes[2] << 24 >> 16 | bytes[3]) / 100).toFixed(2));
+      data.Hum = parseFloat(((bytes[4] << 24 >> 16 | bytes[5]) / 100).toFixed(2));
+      data.Node_type = "N720-SX";
+      return { data: data };
+
+    case 3:
+      data.BatV = ((bytes[0] << 8 | bytes[1]) & 0x3FFF) / 1000;
+      data.TempC = parseFloat(((bytes[2] << 24 >> 16 | bytes[3]) / 100).toFixed(2));
+      data.Hum = parseFloat(((bytes[4] << 24 >> 16 | bytes[5]) / 100).toFixed(2));
+      data.Node_type = "N720-SX";
+      return { data: data };
+
+    case 5:
+      data.SENSOR_MODEL = "N720-SX";
+      data.FIRMWARE_VERSION = ((bytes[1] & 0x0f) + '.' + (bytes[2] >> 4 & 0x0f) + '.' + (bytes[2] & 0x0f));
+      data.FREQUENCY_BAND = bytes[3];
+      data.SUB_BAND = bytes[4];
+      data.BAT = (bytes[5] << 8 | bytes[6]) / 1000;
+      data.Node_type = "N720-SX";
+      return { data: data };
+
+    default:
+      return { errors: ["unknown FPort"] };
+  }
+}
