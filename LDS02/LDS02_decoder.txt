@@ -1,0 +1,62 @@
+function decodeUplink(input) {
+  var port = input.fPort;
+  var bytes = input.bytes;
+  var data = {};
+
+  function getzf(c_num) {
+    if (parseInt(c_num) < 10)
+      c_num = '0' + c_num;
+    return c_num;
+  }
+
+  function getMyDate(str) {
+    var c_Date;
+    if (str > 9999999999)
+      c_Date = new Date(parseInt(str));
+    else
+      c_Date = new Date(parseInt(str) * 1000);
+
+    var c_Year = c_Date.getFullYear(),
+      c_Month = c_Date.getMonth() + 1,
+      c_Day = c_Date.getDate(),
+      c_Hour = c_Date.getHours(),
+      c_Min = c_Date.getMinutes(),
+      c_Sen = c_Date.getSeconds();
+    var c_Time = c_Year + '-' + getzf(c_Month) + '-' + getzf(c_Day) + ' ' + getzf(c_Hour) + ':' + getzf(c_Min) + ':' + getzf(c_Sen);
+    return c_Time;
+  }
+
+  switch (port) {
+    case 2:
+      data.BatV = ((bytes[0] << 8 | bytes[1]) & 0x3fff) / 1000;
+      data.door_open_status = (bytes[0] & 0x80) ? 1 : 0;
+      data.water_leak_status = (bytes[0] & 0x40) ? 1 : 0;
+      var mod = bytes[2];
+      data.alarm = bytes[9] & 0x01;
+      data.mod = mod;
+      data.Node_type = "LDS02";
+
+      if (mod === 1) {
+        data.open_times = bytes[3] << 16 | bytes[4] << 8 | bytes[5];
+        data.open_duration = bytes[6] << 16 | bytes[7] << 8 | bytes[8];
+      } else if (mod === 2) {
+        data.leak_times = bytes[3] << 16 | bytes[4] << 8 | bytes[5];
+        data.leak_duration = bytes[6] << 16 | bytes[7] << 8 | bytes[8];
+      }
+
+      if (bytes.length === 10 && bytes[0] > 0x07 && bytes[0] < 0x0f) {
+        return { data: data };
+      }
+      return { data: data };
+
+    case 7:
+      data.Node_type = "LDS02";
+      data.BatV = ((bytes[0] << 8 | bytes[1]) & 0x3fff) / 1000;
+      data.edc_mod = (bytes[0] & 0x80) ? "OPEN" : "CLOSE";
+      data.times = bytes[2] << 16 | bytes[3] << 8 | bytes[4];
+      return { data: data };
+
+    default:
+      return { errors: ["unknown FPort"] };
+  }
+}
